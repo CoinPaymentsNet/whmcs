@@ -1,0 +1,18 @@
+CoinPayments.net plugin for WHMCS.
+For license details see license.txt
+
+Installation Instructions:
+1. In your WHMCS root folder, upload the contents of the upload directory. You should end up with those files in these paths (relative to WHMCS root folder):
+	modules/gateways/coinpayments.php
+	modules/gateways/coinpayments/lib/api.php
+	modules/gateways/callback/coinpayments.php
+	modules/gateways/coinpayments/logo.png
+	modules/gateways/coinpayments/whmcs.json
+
+2. Log in to your WHMCS admin panel and go to Setup, Payments, Payment Gateways.
+
+3. In the Activate Module dropdown, select CoinPayments.net and click the Activate button.
+		
+4. In the CoinPayments.net configuration form enter your Client ID to recieve payments and your Client Secret to enable CoinPayments.NET webhooks.
+
+5. Click 'Save Changes' and you are good to go.
