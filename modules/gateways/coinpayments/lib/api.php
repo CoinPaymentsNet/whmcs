@@ -108,10 +108,12 @@ class CoinpaymentsApi
     public function createInvoice($invoice_id, $currency_id, $amount, $display_value)
     {
 
-        if (!$this->webhooks == 'on') {
+        if ($this->webhooks == 'on') {
             $action = self::API_MERCHANT_INVOICE_ACTION;
+            $secret = $this->client_secret;
         } else {
             $action = self::API_SIMPLE_INVOICE_ACTION;
+            $secret = false;
         }
 
         $params = array(
@@ -125,7 +127,7 @@ class CoinpaymentsApi
         );
 
         $params = $this->appendInvoiceMetadata($params);
-        return $this->sendRequest('POST', $action, $this->client_id, $params);
+        return $this->sendRequest('POST', $action, $this->client_id, $params, $secret);
     }
 
     /**

@@ -28,7 +28,7 @@ function coinpayments_config($params)
 function coinpayments_link($params)
 {
 
-     if (!isset($_SESSION['coinpayments']['invoices'][$params['invoiceid']])) {
+    if (!isset($_SESSION['coinpayments']['invoices'][$params['invoiceid']])) {
         $coinpayments_api = new CoinpaymentsApi($params);
 
         $invoice_id = sprintf('%s|%s', md5($params['systemurl']), $params['invoiceid']);
