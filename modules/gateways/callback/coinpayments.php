@@ -23,10 +23,10 @@ if ($params['coinpayments_webhooks'] == 'on') {
 
         $invoice_str = $request_data['invoice']['invoiceId'];
         $invoice_str = explode('|', $invoice_str);
-        $host_hast = array_shift($invoice_str);
+        $host_hash = array_shift($invoice_str);
         $invoice_id = array_shift($invoice_str);
 
-        if ($host_hast == md5($params['systemurl'])) {
+        if ($host_hash == md5($params['systemurl'])) {
             $display_value = $request_data['invoice']['amount']['displayValue'];
             $trans_id = $request_data['invoice']['id'];
             $invoice_id = checkCbInvoiceID($invoice_id, $params["name"]);
