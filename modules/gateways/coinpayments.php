@@ -56,7 +56,7 @@ function coinpayments_link($params)
             'cancel-url' => $params['systemurl'],
         );
 
-        $code = '<form id="cpsform" action="' . sprintf('%s/%s', CoinpaymentsApi::API_URL, CoinpaymentsApi::API_CHECKOUT_ACTION) . '" method="GET">';
+        $code = '<form id="cpsform" action="' . sprintf('%s/%s/', CoinpaymentsApi::API_URL, CoinpaymentsApi::API_CHECKOUT_ACTION) . '" method="GET">';
         foreach ($fields as $n => $v) {
             $code .= '<input type="hidden" name="' . $n . '" value="' . htmlspecialchars($v) . '" />';
         }
