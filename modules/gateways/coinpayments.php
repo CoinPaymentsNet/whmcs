@@ -40,6 +40,9 @@ function coinpayments_link($params)
         $display_value = $params['amount'];
 
         $invoice = $coinpayments_api->createInvoice($invoice_id, $coin_currency['id'], $amount, $display_value);
+        if ($params['coinpayments_webhooks'] == 'on') {
+            $invoice = array_shift($invoice['invoices']);
+        }
     } else {
         $invoice = $_SESSION['coinpayments']['invoices'][$params['invoiceid']];
     }
