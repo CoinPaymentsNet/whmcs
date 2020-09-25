@@ -10,7 +10,7 @@ if (!function_exists('json_decode')) {
 class CoinpaymentsApi
 {
 
-    const API_URL = 'https://alpha-api.coinpayments.net';
+    const API_URL = 'https://api.coinpayments.net';
     const API_VERSION = '1';
 
     const API_SIMPLE_INVOICE_ACTION = 'invoices';
