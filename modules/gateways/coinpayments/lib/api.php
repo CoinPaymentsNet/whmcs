@@ -205,12 +205,16 @@ class CoinpaymentsApi
     {
         if (!empty($this->system_url)) {
             $request_url_data = parse_url($this->system_url);
+            $system_url = sprintf('%s://%s', $request_url_data['scheme'], $request_url_data['host']);
+            if (!empty($request_url_data['port']) && $request_url_data['port'] != '80') {
+                $system_url = sprintf('%s:%s', $system_url, $request_url_data['port']);
+            }
         } else {
-            $request_url_data = parse_url($_SERVER['HTTP_HOST']);
-        }
-        $system_url = sprintf('%s://%s', $request_url_data['scheme'], $request_url_data['host']);
-        if (!empty($request_url_data['port']) && $request_url_data['port'] != '80') {
-            $system_url = sprintf('%s:%s', $system_url, $request_url_data['port']);
+            $system_url = sprintf('%s://%s', $_SERVER['REQUEST_SCHEME'], $_SERVER['HTTP_HOST']);
+
+            if (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] != '80') {
+                $system_url = sprintf('%s:%s', $system_url, $_SERVER['SERVER_PORT']);
+            }
         }
         return $system_url;
     }
