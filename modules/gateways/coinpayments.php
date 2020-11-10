@@ -28,10 +28,10 @@ function coinpayments_config($params)
 function coinpayments_link($params)
 {
 
+    $coinpayments_api = new CoinpaymentsApi($params);
     if (!isset($_SESSION['coinpayments']['invoices'][$params['invoiceid']])) {
-        $coinpayments_api = new CoinpaymentsApi($params);
 
-        $invoice_id = sprintf('%s|%s', md5($params['systemurl']), $params['invoiceid']);
+        $invoice_id = sprintf('%s|%s', md5($coinpayments_api->getSystemUrl()), $params['invoiceid']);
 
         $currency_code = $params['currency'];
         $coin_currency = $coinpayments_api->getCoinCurrency($currency_code);
@@ -55,8 +55,8 @@ function coinpayments_link($params)
 
         $fields = array(
             'invoice-id' => $invoice['id'],
-            'success-url' => $params['systemurl'],
-            'cancel-url' => $params['systemurl'],
+            'success-url' => sprintf('%s/viewinvoice.php?id=%s', $coinpayments_api->getSystemUrl(), $params['invoiceid']),
+            'cancel-url' => sprintf('%s/viewinvoice.php?id=%s', $coinpayments_api->getSystemUrl(), $params['invoiceid']),
         );
 
         $code = '<form id="cpsform" action="' . sprintf('%s/%s/', CoinpaymentsApi::API_URL, CoinpaymentsApi::API_CHECKOUT_ACTION) . '" method="GET">';

@@ -20,12 +20,13 @@ class CoinpaymentsApi
     const API_CHECKOUT_ACTION = 'checkout';
     const FIAT_TYPE = 'fiat';
 
-    const WEBHOOK_NOTIFICATION_URL = '/modules/gateways/callback/coinpayments.php';
+    const WEBHOOK_NOTIFICATION_URL = 'modules/gateways/callback/coinpayments.php';
 
     protected $client_id;
     protected $client_secret;
     protected $system_url;
     protected $webhooks;
+    protected $version;
 
     /**
      * CoinpaymentsApi constructor.
@@ -37,6 +38,7 @@ class CoinpaymentsApi
         $this->client_id = $params['coinpayments_client_id'];
         $this->client_secret = $params['coinpayments_client_secret'];
         $this->webhooks = $params['coinpayments_webhooks'];
+        $this->version = $params["whmcsVersion"];
     }
 
     /**
@@ -198,9 +200,26 @@ class CoinpaymentsApi
     /**
      * @return string
      */
+    public function getSystemUrl()
+    {
+        if (!empty($this->system_url)) {
+            $request_url_data = parse_url($this->system_url);
+        } else {
+            $request_url_data = parse_url($_SERVER['HTTP_HOST']);
+        }
+        $system_url = sprintf('%s://%s', $request_url_data['scheme'], $request_url_data['host']);
+        if (!empty($request_url_data['port']) && $request_url_data['port'] != '80') {
+            $system_url = sprintf('%s:%s', $system_url, $request_url_data['port']);
+        }
+        return $system_url;
+    }
+
+    /**
+     * @return string
+     */
     protected function getNotificationUrl()
     {
-        return $this->system_url . self::WEBHOOK_NOTIFICATION_URL;
+        return sprintf('%s/%s', $this->getSystemUrl(), self::WEBHOOK_NOTIFICATION_URL);
     }
 
     /**
@@ -271,7 +290,7 @@ class CoinpaymentsApi
     protected function appendInvoiceMetadata($request_data)
     {
         $request_data['metadata'] = array(
-            "integration" => sprintf("WHMCS"),
+            "integration" => sprintf('WHMCS_%s', $this->version),
             "hostname" => $this->system_url,
         );
 

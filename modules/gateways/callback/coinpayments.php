@@ -26,7 +26,7 @@ if ($params['coinpayments_webhooks'] == 'on') {
         $host_hash = array_shift($invoice_str);
         $invoice_id = array_shift($invoice_str);
 
-        if ($host_hash == md5($params['systemurl'])) {
+        if ($host_hash == md5($coinpayments_api->getSystemUrl())) {
             $display_value = $request_data['invoice']['amount']['displayValue'];
             $trans_id = $request_data['invoice']['id'];
             $invoice_id = checkCbInvoiceID($invoice_id, $params["name"]);
