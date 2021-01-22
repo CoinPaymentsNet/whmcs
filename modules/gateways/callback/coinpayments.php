@@ -19,7 +19,7 @@ if ($params['coinpayments_webhooks'] == 'on') {
     $signature = $_SERVER['HTTP_X_COINPAYMENTS_SIGNATURE'];
     $request_data = json_decode($content, true);
 
-    if ($coinpayments_api->checkDataSignature($signature, $content) && isset($request_data['invoice']['invoiceId'])) {
+    if ($coinpayments_api->checkDataSignature($signature, $content, $request_data['invoice']['status']) && isset($request_data['invoice']['invoiceId'])) {
 
         $invoice_str = $request_data['invoice']['invoiceId'];
         $invoice_str = explode('|', $invoice_str);
@@ -32,7 +32,8 @@ if ($params['coinpayments_webhooks'] == 'on') {
             $invoice_id = checkCbInvoiceID($invoice_id, $params["name"]);
             checkCbTransID($trans_id);
 
-            if ($request_data['invoice']['status'] == 'Complete') {
+            $completed_statuses = array(CoinpaymentsApi::PAID_EVENT, CoinpaymentsApi::PENDING_EVENT);
+            if (in_array($request_data['invoice']['status'], $completed_statuses)) {
                 addInvoicePayment($invoice_id, $trans_id, $display_value, 0.00, $gatewaymodule);
             }
         }

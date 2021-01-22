@@ -21,6 +21,10 @@ class CoinpaymentsApi
     const API_CHECKOUT_ACTION = 'checkout';
     const FIAT_TYPE = 'fiat';
 
+    const PAID_EVENT = 'Paid';
+    const CANCELLED_EVENT = 'Cancelled';
+    const PENDING_EVENT = 'Pending';
+
     const WEBHOOK_NOTIFICATION_URL = 'modules/gateways/callback/coinpayments.php';
 
     protected $client_id;
@@ -46,7 +50,7 @@ class CoinpaymentsApi
      * @return bool
      * @throws Exception
      */
-    public function checkWebhook()
+    public function checkWebhook($event)
     {
         $exists = false;
         $webhooks_list = $this->getWebhooksList();
@@ -57,7 +61,7 @@ class CoinpaymentsApi
                     return $webHook['notificationsUrl'];
                 }, $webhooks_list['items']);
             }
-            if (in_array($this->getNotificationUrl(), $webhooks_urls_list)) {
+            if (in_array($this->getNotificationUrl($event), $webhooks_urls_list)) {
                 $exists = true;
             }
         }
@@ -81,19 +85,15 @@ class CoinpaymentsApi
      * @return bool|mixed
      * @throws Exception
      */
-    public function createWebHook()
+    public function createWebHook($event)
     {
 
         $action = sprintf(self::API_WEBHOOK_ACTION, $this->client_id);
 
         $params = array(
-            "notificationsUrl" => $this->getNotificationUrl(),
+            "notificationsUrl" => $this->getNotificationUrl($event),
             "notifications" => [
-                "invoiceCreated",
-                "invoicePending",
-                "invoicePaid",
-                "invoiceCompleted",
-                "invoiceCancelled",
+                sprintf("invoice%s", $event)
             ],
         );
 
@@ -170,10 +170,10 @@ class CoinpaymentsApi
      * @param $content
      * @return bool
      */
-    public function checkDataSignature($signature, $content)
+    public function checkDataSignature($signature, $content, $event)
     {
 
-        $request_url = $this->getNotificationUrl();
+        $request_url = $this->getNotificationUrl($event);
         $signature_string = sprintf('%s%s', $request_url, $content);
         $encoded_pure = $this->encodeSignatureString($signature_string, $this->client_secret);
         return $signature == $encoded_pure;
@@ -222,9 +222,9 @@ class CoinpaymentsApi
     /**
      * @return string
      */
-    protected function getNotificationUrl()
+    protected function getNotificationUrl($event)
     {
-        return sprintf('%s/%s', $this->getSystemUrl(), self::WEBHOOK_NOTIFICATION_URL);
+        return sprintf('%s/%s?clientId=%s&event=%s', $this->getSystemUrl(), self::WEBHOOK_NOTIFICATION_URL, $this->client_id, $event);
     }
 
     /**
