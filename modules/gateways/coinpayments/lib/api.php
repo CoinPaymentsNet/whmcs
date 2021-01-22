@@ -32,6 +32,7 @@ class CoinpaymentsApi
     protected $system_url;
     protected $webhooks;
     protected $version;
+    protected $companyname;
 
     /**
      * CoinpaymentsApi constructor.
@@ -44,6 +45,7 @@ class CoinpaymentsApi
         $this->client_secret = $params['coinpayments_client_secret'];
         $this->webhooks = $params['coinpayments_webhooks'];
         $this->version = $params["whmcsVersion"];
+        $this->companyname = $params['companyname'];
     }
 
     /**
@@ -114,10 +116,14 @@ class CoinpaymentsApi
         if ($this->webhooks == 'on') {
             $action = self::API_MERCHANT_INVOICE_ACTION;
             $secret = $this->client_secret;
+            $notes_field_name = 'notes';
         } else {
             $action = self::API_SIMPLE_INVOICE_ACTION;
             $secret = false;
+            $notes_field_name = 'notesToRecipient';
         }
+
+        $notes_field_value = sprintf("%s / Store name: %s / Order # %s",$this->getSystemUrl(), $this->companyname ,explode('|', $invoice_id)[1]);
 
         $params = array(
             'clientId' => $this->client_id,
@@ -127,6 +133,7 @@ class CoinpaymentsApi
                 "displayValue" => $display_value,
                 'value' => $amount
             ],
+            $notes_field_name => $notes_field_value
         );
 
         $params = $this->appendInvoiceMetadata($params);
