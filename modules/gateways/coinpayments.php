@@ -45,7 +45,7 @@ function coinpayments_link($params)
         $amount = intval(number_format($params['amount'], $coin_currency['decimalPlaces'], '', ''));
         $display_value = $params['amount'];
 
-        $invoice = $coinpayments_api->createInvoice($invoice_id, $coin_currency['id'], $amount, $display_value);
+        $invoice = $coinpayments_api->createInvoice($invoice_id, $coin_currency['id'], $amount, $display_value, $params['cart']->client->getAttributes());
         if ($params['coinpayments_webhooks'] == 'on') {
             $invoice = array_shift($invoice['invoices']);
         }
