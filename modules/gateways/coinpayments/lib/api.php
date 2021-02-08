@@ -110,7 +110,7 @@ class CoinpaymentsApi
      * @return bool|mixed
      * @throws Exception
      */
-    public function createInvoice($invoice_id, $currency_id, $amount, $display_value)
+    public function createInvoice($invoice_id, $currency_id, $amount, $display_value, $billing_data)
     {
 
         if ($this->webhooks == 'on') {
@@ -128,6 +128,7 @@ class CoinpaymentsApi
         $params = array(
             'clientId' => $this->client_id,
             'invoiceId' => $invoice_id,
+            'buyer' => $this->append_billing_data($billing_data),
             'amount' => [
                 'currencyId' => $currency_id,
                 "displayValue" => $display_value,
@@ -138,6 +139,23 @@ class CoinpaymentsApi
 
         $params = $this->appendInvoiceMetadata($params);
         return $this->sendRequest('POST', $action, $this->client_id, $params, $secret);
+    }
+
+    /**
+     * @param $billing_data
+     * @return array
+     */
+    function append_billing_data($billing_data)
+    {
+        return array(
+            "companyName" => $billing_data['companyname'],
+            "name" => array(
+                "firstName" => $billing_data['firstname'],
+                "lastName" => $billing_data['lastname']
+            ),
+            "emailAddress" => $billing_data['email'],
+            "phoneNumber" => $billing_data['phonenumber'],
+        );
     }
 
     /**
