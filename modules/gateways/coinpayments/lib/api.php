@@ -103,38 +103,31 @@ class CoinpaymentsApi
     }
 
     /**
-     * @param $invoice_id
-     * @param $currency_id
-     * @param $amount
-     * @param $display_value
+     * @param $invoice_params
      * @return bool|mixed
      * @throws Exception
      */
-    public function createInvoice($invoice_id, $currency_id, $amount, $display_value, $billing_data)
+    public function createInvoice($invoice_params)
     {
 
         if ($this->webhooks == 'on') {
             $action = self::API_MERCHANT_INVOICE_ACTION;
             $secret = $this->client_secret;
-            $notes_field_name = 'notes';
         } else {
             $action = self::API_SIMPLE_INVOICE_ACTION;
             $secret = false;
-            $notes_field_name = 'notesToRecipient';
         }
-
-        $notes_field_value = sprintf("%s / Store name: %s / Order # %s",$this->getSystemUrl(), $this->companyname ,explode('|', $invoice_id)[1]);
 
         $params = array(
             'clientId' => $this->client_id,
-            'invoiceId' => $invoice_id,
-            'buyer' => $this->append_billing_data($billing_data),
+            'invoiceId' => $invoice_params['invoice_id'],
+            'buyer' => $this->append_billing_data($invoice_params['billing_data']),
             'amount' => [
-                'currencyId' => $currency_id,
-                "displayValue" => $display_value,
-                'value' => $amount
+                'currencyId' => $invoice_params['currency_id'],
+                "displayValue" => $invoice_params['$display_value'],
+                'value' => $invoice_params['amount']
             ],
-            $notes_field_name => $notes_field_value
+            'notesToRecipient' => $invoice_params['notes_link']
         );
 
         $params = $this->appendInvoiceMetadata($params);
