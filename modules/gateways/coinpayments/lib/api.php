@@ -128,7 +128,6 @@ class CoinpaymentsApi
         $params = array(
             'clientId' => $this->client_id,
             'invoiceId' => $invoice_id,
-            'buyer' => $this->append_billing_data($billing_data),
             'amount' => [
                 'currencyId' => $currency_id,
                 "displayValue" => $display_value,
@@ -137,17 +136,18 @@ class CoinpaymentsApi
             $notes_field_name => $notes_field_value
         );
 
+        $params = $this->append_billing_data($params, $billing_data);
         $params = $this->appendInvoiceMetadata($params);
         return $this->sendRequest('POST', $action, $this->client_id, $params, $secret);
     }
 
     /**
      * @param $billing_data
-     * @return array
+     * @return mixed
      */
-    function append_billing_data($billing_data)
+    function append_billing_data($request_data, $billing_data)
     {
-        return array(
+        $request_data['buyer'] =  array(
             "companyName" => $billing_data['companyname'],
             "name" => array(
                 "firstName" => $billing_data['firstname'],
@@ -156,6 +156,19 @@ class CoinpaymentsApi
             "emailAddress" => $billing_data['email'],
             "phoneNumber" => $billing_data['phonenumber'],
         );
+        if (preg_match('/^([A-Z]{2})$/', $billing_data['country'])
+        && !empty($billing_data['address1'])
+            && !empty($billing_data['city'])
+        ) {
+            $request_data['buyer']['address'] = array(
+                'address1' => $billing_data['address1'],
+                'provinceOrState' => $billing_data['state'],
+                'city' => $billing_data['city'],
+                'countryCode' => $billing_data['country'],
+                'postalCode' => $billing_data['postcode'],
+            );
+        }
+        return $request_data;
     }
 
     /**
