@@ -32,8 +32,7 @@ if ($params['coinpayments_webhooks'] == 'on') {
             $invoice_id = checkCbInvoiceID($invoice_id, $params["name"]);
             checkCbTransID($trans_id);
 
-            $completed_statuses = array(CoinpaymentsApi::PAID_EVENT, CoinpaymentsApi::PENDING_EVENT);
-            if (in_array($request_data['invoice']['status'], $completed_statuses)) {
+            if ($request_data['invoice']['status'] == CoinpaymentsApi::PAID_EVENT) {
                 addInvoicePayment($invoice_id, $trans_id, $display_value, 0.00, $gatewaymodule);
             }
         }

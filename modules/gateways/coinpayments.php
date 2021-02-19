@@ -12,9 +12,6 @@ function coinpayments_config($params)
         if (!$coinpayments_api->checkWebhook(CoinpaymentsApi::PAID_EVENT)) {
             $coinpayments_api->createWebhook(CoinpaymentsApi::PAID_EVENT);
         }
-        if (!$coinpayments_api->checkWebhook(CoinpaymentsApi::PENDING_EVENT)) {
-            $coinpayments_api->createWebhook(CoinpaymentsApi::PENDING_EVENT);
-        }
         if (!$coinpayments_api->checkWebhook(CoinpaymentsApi::CANCELLED_EVENT)) {
             $coinpayments_api->createWebhook(CoinpaymentsApi::CANCELLED_EVENT);
         }
