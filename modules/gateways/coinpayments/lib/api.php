@@ -124,7 +124,7 @@ class CoinpaymentsApi
             'buyer' => $this->append_billing_data($invoice_params['billing_data']),
             'amount' => [
                 'currencyId' => $invoice_params['currency_id'],
-                "displayValue" => $invoice_params['$display_value'],
+                "displayValue" => $invoice_params['display_value'],
                 'value' => $invoice_params['amount']
             ],
             'notesToRecipient' => $invoice_params['notes_link']
