@@ -23,7 +23,6 @@ class CoinpaymentsApi
 
     const PAID_EVENT = 'Paid';
     const CANCELLED_EVENT = 'Cancelled';
-    const PENDING_EVENT = 'Pending';
 
     const WEBHOOK_NOTIFICATION_URL = 'modules/gateways/callback/coinpayments.php';
 
