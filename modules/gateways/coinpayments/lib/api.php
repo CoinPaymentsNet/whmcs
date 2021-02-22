@@ -23,7 +23,6 @@ class CoinpaymentsApi
 
     const PAID_EVENT = 'Paid';
     const CANCELLED_EVENT = 'Cancelled';
-    const PENDING_EVENT = 'Pending';
 
     const WEBHOOK_NOTIFICATION_URL = 'modules/gateways/callback/coinpayments.php';
 
@@ -121,7 +120,6 @@ class CoinpaymentsApi
         $params = array(
             'clientId' => $this->client_id,
             'invoiceId' => $invoice_params['invoice_id'],
-            'buyer' => $this->append_billing_data($invoice_params['billing_data']),
             'amount' => [
                 'currencyId' => $invoice_params['currency_id'],
                 "displayValue" => $invoice_params['display_value'],
@@ -130,17 +128,18 @@ class CoinpaymentsApi
             'notesToRecipient' => $invoice_params['notes_link']
         );
 
+        $params = $this->append_billing_data($params, $invoice_params['billing_data']);
         $params = $this->appendInvoiceMetadata($params);
         return $this->sendRequest('POST', $action, $this->client_id, $params, $secret);
     }
 
     /**
      * @param $billing_data
-     * @return array
+     * @return mixed
      */
-    function append_billing_data($billing_data)
+    function append_billing_data($request_data, $billing_data)
     {
-        return array(
+        $request_data['buyer'] =  array(
             "companyName" => $billing_data['companyname'],
             "name" => array(
                 "firstName" => $billing_data['firstname'],
@@ -149,6 +148,19 @@ class CoinpaymentsApi
             "emailAddress" => $billing_data['email'],
             "phoneNumber" => $billing_data['phonenumber'],
         );
+        if (preg_match('/^([A-Z]{2})$/', $billing_data['country'])
+        && !empty($billing_data['address1'])
+            && !empty($billing_data['city'])
+        ) {
+            $request_data['buyer']['address'] = array(
+                'address1' => $billing_data['address1'],
+                'provinceOrState' => $billing_data['state'],
+                'city' => $billing_data['city'],
+                'countryCode' => $billing_data['country'],
+                'postalCode' => $billing_data['postcode'],
+            );
+        }
+        return $request_data;
     }
 
     /**
