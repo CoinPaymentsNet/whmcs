@@ -6,7 +6,8 @@
   "category": "payments",
   "description": {
     "name": "CoinPayments",
-    "tagline": "Implements CoinPayments payment services for merchants."
+    "tagline": "Implements CoinPayments payment services for merchants.",
+    "long": "Pay with Bitcoin, Litecoin, or other altcoins via [CoinPayments.net &raquo;](https://alpha.coinpayments.net/)"
   },
   "logo": {
     "filename": "logo.png"
