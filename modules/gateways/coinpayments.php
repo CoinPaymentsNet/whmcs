@@ -48,7 +48,7 @@ function coinpayments_link($params)
             'amount' => $amount,
             'display_value' => $display_value,
             'billing_data' => $params['cart']->client->getAttributes(),
-            'notes_link' => $params['systemurl'] . "admin/orders.php?action=view&id=" . $params['invoiceid'],
+            'notes_link' => sprintf("%s|Store name: %s|Order #%s", $params['systemurl'] . "admin/orders.php?action=view&id=" . $params['invoiceid'], $params['companyname'],$params['invoiceid'])
         );
 
         $invoice = $coinpayments_api->createInvoice($invoice_params);
