@@ -10,7 +10,8 @@ if (!function_exists('json_decode')) {
 class CoinpaymentsApi
 {
 
-    const API_URL = 'https://orion-api.starhermit.com';
+    const API_URL = 'https://api.coinpayments.net';
+    const CHECKOUT_URL = 'https://checkout.coinpayments.net';
     const API_VERSION = '1';
 
     const API_SIMPLE_INVOICE_ACTION = 'invoices';
@@ -20,12 +21,17 @@ class CoinpaymentsApi
     const API_CHECKOUT_ACTION = 'checkout';
     const FIAT_TYPE = 'fiat';
 
-    const WEBHOOK_NOTIFICATION_URL = '/modules/gateways/callback/coinpayments.php';
+    const PAID_EVENT = 'Paid';
+    const CANCELLED_EVENT = 'Cancelled';
+
+    const WEBHOOK_NOTIFICATION_URL = 'modules/gateways/callback/coinpayments.php';
 
     protected $client_id;
     protected $client_secret;
     protected $system_url;
     protected $webhooks;
+    protected $version;
+    protected $companyname;
 
     /**
      * CoinpaymentsApi constructor.
@@ -37,13 +43,15 @@ class CoinpaymentsApi
         $this->client_id = $params['coinpayments_client_id'];
         $this->client_secret = $params['coinpayments_client_secret'];
         $this->webhooks = $params['coinpayments_webhooks'];
+        $this->version = $params["whmcsVersion"];
+        $this->companyname = $params['companyname'];
     }
 
     /**
      * @return bool
      * @throws Exception
      */
-    public function checkWebhook()
+    public function checkWebhook($event)
     {
         $exists = false;
         $webhooks_list = $this->getWebhooksList();
@@ -54,7 +62,7 @@ class CoinpaymentsApi
                     return $webHook['notificationsUrl'];
                 }, $webhooks_list['items']);
             }
-            if (in_array($this->getNotificationUrl(), $webhooks_urls_list)) {
+            if (in_array($this->getNotificationUrl($event), $webhooks_urls_list)) {
                 $exists = true;
             }
         }
@@ -78,19 +86,15 @@ class CoinpaymentsApi
      * @return bool|mixed
      * @throws Exception
      */
-    public function createWebHook()
+    public function createWebHook($event)
     {
 
         $action = sprintf(self::API_WEBHOOK_ACTION, $this->client_id);
 
         $params = array(
-            "notificationsUrl" => $this->getNotificationUrl(),
+            "notificationsUrl" => $this->getNotificationUrl($event),
             "notifications" => [
-                "invoiceCreated",
-                "invoicePending",
-                "invoicePaid",
-                "invoiceCompleted",
-                "invoiceCancelled",
+                sprintf("invoice%s", $event)
             ],
         );
 
@@ -98,34 +102,65 @@ class CoinpaymentsApi
     }
 
     /**
-     * @param $invoice_id
-     * @param $currency_id
-     * @param $amount
-     * @param $display_value
+     * @param $invoice_params
      * @return bool|mixed
      * @throws Exception
      */
-    public function createInvoice($invoice_id, $currency_id, $amount, $display_value)
+    public function createInvoice($invoice_params)
     {
 
-        if (!$this->webhooks == 'on') {
+        if ($this->webhooks == 'on') {
             $action = self::API_MERCHANT_INVOICE_ACTION;
+            $secret = $this->client_secret;
         } else {
             $action = self::API_SIMPLE_INVOICE_ACTION;
+            $secret = false;
         }
 
         $params = array(
             'clientId' => $this->client_id,
-            'invoiceId' => $invoice_id,
+            'invoiceId' => $invoice_params['invoice_id'],
             'amount' => [
-                'currencyId' => $currency_id,
-                "displayValue" => $display_value,
-                'value' => $amount
+                'currencyId' => $invoice_params['currency_id'],
+                "displayValue" => $invoice_params['display_value'],
+                'value' => $invoice_params['amount']
             ],
+            'notesToRecipient' => $invoice_params['notes_link']
         );
 
+        $params = $this->append_billing_data($params, $invoice_params['billing_data']);
         $params = $this->appendInvoiceMetadata($params);
-        return $this->sendRequest('POST', $action, $this->client_id, $params);
+        return $this->sendRequest('POST', $action, $this->client_id, $params, $secret);
+    }
+
+    /**
+     * @param $billing_data
+     * @return mixed
+     */
+    function append_billing_data($request_data, $billing_data)
+    {
+        $request_data['buyer'] =  array(
+            "companyName" => $billing_data['companyname'],
+            "name" => array(
+                "firstName" => $billing_data['firstname'],
+                "lastName" => $billing_data['lastname']
+            ),
+            "emailAddress" => $billing_data['email'],
+            "phoneNumber" => $billing_data['phonenumber'],
+        );
+        if (preg_match('/^([A-Z]{2})$/', $billing_data['country'])
+        && !empty($billing_data['address1'])
+            && !empty($billing_data['city'])
+        ) {
+            $request_data['buyer']['address'] = array(
+                'address1' => $billing_data['address1'],
+                'provinceOrState' => $billing_data['state'],
+                'city' => $billing_data['city'],
+                'countryCode' => $billing_data['country'],
+                'postalCode' => $billing_data['postcode'],
+            );
+        }
+        return $request_data;
     }
 
     /**
@@ -165,10 +200,10 @@ class CoinpaymentsApi
      * @param $content
      * @return bool
      */
-    public function checkDataSignature($signature, $content)
+    public function checkDataSignature($signature, $content, $event)
     {
 
-        $request_url = $this->getNotificationUrl();
+        $request_url = $this->getNotificationUrl($event);
         $signature_string = sprintf('%s%s', $request_url, $content);
         $encoded_pure = $this->encodeSignatureString($signature_string, $this->client_secret);
         return $signature == $encoded_pure;
@@ -196,9 +231,30 @@ class CoinpaymentsApi
     /**
      * @return string
      */
-    protected function getNotificationUrl()
+    public function getSystemUrl()
     {
-        return $this->system_url . self::WEBHOOK_NOTIFICATION_URL;
+        if (!empty($this->system_url)) {
+            $request_url_data = parse_url($this->system_url);
+            $system_url = sprintf('%s://%s', $request_url_data['scheme'], $request_url_data['host']);
+            if (!empty($request_url_data['port']) && $request_url_data['port'] != '80') {
+                $system_url = sprintf('%s:%s', $system_url, $request_url_data['port']);
+            }
+        } else {
+            $system_url = sprintf('%s://%s', $_SERVER['REQUEST_SCHEME'], $_SERVER['HTTP_HOST']);
+
+            if (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] != '80') {
+                $system_url = sprintf('%s:%s', $system_url, $_SERVER['SERVER_PORT']);
+            }
+        }
+        return $system_url;
+    }
+
+    /**
+     * @return string
+     */
+    protected function getNotificationUrl($event)
+    {
+        return sprintf('%s/%s?clientId=%s&event=%s', $this->getSystemUrl(), self::WEBHOOK_NOTIFICATION_URL, $this->client_id, $event);
     }
 
     /**
@@ -269,7 +325,7 @@ class CoinpaymentsApi
     protected function appendInvoiceMetadata($request_data)
     {
         $request_data['metadata'] = array(
-            "integration" => sprintf("WHMCS"),
+            "integration" => sprintf('WHMCS_%s', $this->version),
             "hostname" => $this->system_url,
         );
 
@@ -288,7 +344,7 @@ class CoinpaymentsApi
     protected function createSignature($method, $api_url, $client_id, $date, $client_secret, $params)
     {
 
-        if (!empty(json_encode($params))) {
+        if (!empty($params)) {
             $params = json_encode($params);
         }
 
