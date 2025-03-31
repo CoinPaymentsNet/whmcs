@@ -1,5 +1,7 @@
 # whmcs
 
+> NOTICE: Migrated to [CoinPaymentsNet/plugin-whmcs](https://github.com/CoinPaymentsNet/plugin-whmcs).
+
 IMPORTANT NOTE:
 
 This is only for use with: https://alpha.coinpayments.net/
