@@ -13,28 +13,41 @@ $content = file_get_contents('php://input');
 
 if (!$params["type"]) die("Module Not Activated");
 
-if ($params['coinpayments_webhooks'] == 'on') {
+$coinpayments_api = new CoinpaymentsApi($params);
+$signature = $_SERVER['HTTP_X_COINPAYMENTS_SIGNATURE'];
+$date = $_SERVER['HTTP_X_COINPAYMENTS_TIMESTAMP'];
+$request_data = json_decode($content, true);
 
-    $coinpayments_api = new CoinpaymentsApi($params);
-    $signature = $_SERVER['HTTP_X_COINPAYMENTS_SIGNATURE'];
-    $request_data = json_decode($content, true);
+if (!$coinpayments_api->checkDataSignature($signature, "POST", $date, $content)) {
+    logTransaction($params["name"], $content, "Could not validate signature");
+    return;
+}
 
-    if ($coinpayments_api->checkDataSignature($signature, $content, $request_data['invoice']['status']) && isset($request_data['invoice']['invoiceId'])) {
+$invoice = !empty($request_data['invoice']) ? $request_data['invoice'] : null;
+if (is_null($invoice)) {
+    logTransaction($params["name"], $content, "Could not obtain invoice data");
+    return;
+}
 
-        $invoice_str = $request_data['invoice']['invoiceId'];
-        $invoice_str = explode('|', $invoice_str);
-        $host_hash = array_shift($invoice_str);
-        $invoice_id = array_shift($invoice_str);
+$invoiceIdRaw = !empty($invoice['invoiceId']) ? $invoice['invoiceId'] : null;
+$webhookType = !empty($request_data['type']) ? $request_data['type'] : null;
+if (empty($invoiceIdRaw) || empty($webhookType)) {
+    logTransaction($params["name"], $content, "Missing required invoice data");
+    return;
+}
 
-        if ($host_hash == md5($coinpayments_api->getSystemUrl())) {
-            $display_value = $request_data['invoice']['amount']['displayValue'];
-            $trans_id = $request_data['invoice']['id'];
-            $invoice_id = checkCbInvoiceID($invoice_id, $params["name"]);
-            checkCbTransID($trans_id);
+$invoice_str = explode('|', $invoiceIdRaw);
+$host_hash = array_shift($invoice_str);
+$invoice_id = array_shift($invoice_str);
+if ($host_hash != md5($coinpayments_api->getSystemUrl())) {
+    logTransaction($params["name"], $content, "Could not validate host hash");
+    return;
+}
 
-            if ($request_data['invoice']['status'] == CoinpaymentsApi::PAID_EVENT) {
-                addInvoicePayment($invoice_id, $trans_id, $display_value, 0.00, $gatewaymodule);
-            }
-        }
-    }
+$display_value = $request_data['invoice']['amount']['total'];
+$trans_id = $request_data['invoice']['id'];
+$invoice_id = checkCbInvoiceID($invoice_id, $params["name"]);
+checkCbTransID($trans_id);
+if ($webhookType == CoinpaymentsApi::NOTIFICATION_INVOICE_COMPLETED) {
+    addInvoicePayment($invoice_id, $trans_id, $display_value, 0.00, $gatewaymodule);
 }
